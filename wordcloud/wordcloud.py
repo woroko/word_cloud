@@ -46,9 +46,10 @@ class IntegralOccupancyMap(object):
         else:
             self.integral = np.zeros((height, width), dtype=np.uint32)
 
-    def sample_position(self, size_x, size_y, random_state):
+    # sample positions; if desired_x and desired_y > 0, use them as hint
+    def sample_position(self, size_x, size_y, random_state, desired_x, desired_y):
         return query_integral_image(self.integral, size_x, size_y,
-                                    random_state)
+                                    random_state, desired_x, desired_y)
 
     def update(self, img_array, pos_x, pos_y):
         partial_integral = np.cumsum(np.cumsum(img_array[pos_x:, pos_y:],
@@ -388,8 +389,8 @@ class WordCloud(object):
         """
         return self.generate_from_frequencies(frequencies)
 
-    def generate_from_frequencies(self, frequencies, max_font_size=None):  # noqa: C901
-        """Create a word_cloud from words and frequencies.
+    def generate_from_frequencies(self, frequencies, max_font_size=None, desired_positions=None):  # noqa: C901
+        """Create a word_cloud from words and frequencies, with optional desired positions.
 
         Parameters
         ----------
@@ -398,6 +399,9 @@ class WordCloud(object):
 
         max_font_size : int
             Use this font-size instead of self.max_font_size
+
+        desired_positions : dict from string to tuple (x, y)
+            Use this to set the desired positions of words (between 0...1). If None, random positions will be used.
 
         Returns
         -------
@@ -509,10 +513,13 @@ class WordCloud(object):
                     font, orientation=orientation)
                 # get size of resulting text
                 box_size = draw.textbbox((0, 0), word, font=transposed_font, anchor="lt")
+                # get desired positions
+                desired_x = desired_positions.get(word, -1)[0] if desired_positions is not None else -1
+                desired_y = desired_positions.get(word, -1)[1] if desired_positions is not None else -1
                 # find possible places using integral image:
                 result = occupancy.sample_position(box_size[3] + self.margin,
                                                    box_size[2] + self.margin,
-                                                   random_state)
+                                                   random_state, desired_x, desired_y)
                 if result is not None:
                     # Found a place
                     break
@@ -603,7 +610,7 @@ class WordCloud(object):
 
         return word_counts
 
-    def generate_from_text(self, text):
+    def generate_from_text(self, text, desired_positions=None):
         """Generate wordcloud from text.
 
         The input "text" is expected to be a natural text. If you pass a sorted
@@ -621,10 +628,10 @@ class WordCloud(object):
         self
         """
         words = self.process_text(text)
-        self.generate_from_frequencies(words)
+        self.generate_from_frequencies(words, desired_positions=desired_positions)
         return self
 
-    def generate(self, text):
+    def generate(self, text, desired_positions=None):
         """Generate wordcloud from text.
 
         The input "text" is expected to be a natural text. If you pass a sorted
@@ -639,7 +646,7 @@ class WordCloud(object):
         -------
         self
         """
-        return self.generate_from_text(text)
+        return self.generate_from_text(text, desired_positions)
 
     def _check_generated(self):
         """Check if ``layout_`` was computed, otherwise raise error."""
