@@ -389,7 +389,7 @@ class WordCloud(object):
         """
         return self.generate_from_frequencies(frequencies)
 
-    def generate_from_frequencies(self, frequencies, max_font_size=None, desired_positions=None):  # noqa: C901
+    def generate_from_frequencies(self, frequencies, max_font_size=None, desired_positions=None, global_frequencies=None):  # noqa: C901
         """Create a word_cloud from words and frequencies, with optional desired positions.
 
         Parameters
@@ -409,7 +409,12 @@ class WordCloud(object):
 
         """
         # make sure frequencies are sorted and normalized
-        frequencies = sorted(frequencies.items(), key=itemgetter(1), reverse=True)
+        if global_frequencies is not None: 
+            # sort by global frequency
+            frequencies = sorted(frequencies.items(), key=lambda x: global_frequencies[x[0]], reverse=True)
+        else:
+            # sort by local frequency
+            frequencies = sorted(frequencies.items(), key=itemgetter(1), reverse=True)
         if len(frequencies) <= 0:
             raise ValueError("We need at least 1 word to plot a word cloud, "
                              "got %d." % len(frequencies))
@@ -420,6 +425,7 @@ class WordCloud(object):
 
         frequencies = [(word, freq / max_frequency)
                        for word, freq in frequencies]
+        
 
         if self.random_state is not None:
             random_state = self.random_state
@@ -440,6 +446,7 @@ class WordCloud(object):
         draw = ImageDraw.Draw(img_grey)
         img_array = np.asarray(img_grey)
         font_sizes, positions, orientations, colors = [], [], [], []
+        drawn_frequencies = {}
 
         last_freq = 1.
 
@@ -540,6 +547,7 @@ class WordCloud(object):
             x, y = np.array(result) + self.margin // 2
             # actually draw the text
             draw.text((y, x), word, fill="white", font=transposed_font)
+            drawn_frequencies[word] = freq
             positions.append((x, y))
             orientations.append(orientation)
             font_sizes.append(font_size)
@@ -560,6 +568,8 @@ class WordCloud(object):
 
         self.layout_ = list(zip(frequencies, font_sizes, positions,
                                 orientations, colors))
+        self.drawn_frequencies_ = drawn_frequencies
+
         return self
 
     def process_text(self, text):
