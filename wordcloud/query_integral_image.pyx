@@ -3,10 +3,10 @@
 # cython: wraparound=False
 import array
 import numpy as np
-
+from libc.math cimport sqrt
 
 def query_integral_image(unsigned int[:,:] integral_image, int size_x, int
-                         size_y, random_state, double desired_x, double desired_y):
+                         size_y, random_state, double desired_x, double desired_y, double distance_threshold):
     cdef int x = integral_image.shape[0]
     cdef int y = integral_image.shape[1]
     cdef int area, i, j
@@ -34,14 +34,17 @@ def query_integral_image(unsigned int[:,:] integral_image, int size_x, int
                 area -= integral_image[i + size_x, j] + integral_image[i, j + size_y]
                 if not area:
                     #hits += 1
-                    distance_to_desired = (desired_x*x - i) ** 2 + (desired_y*y - j) ** 2
+                    distance_to_desired = (desired_x*x - (i+size_x/2)) ** 2 + (desired_y*y - (j+size_y/2)) ** 2
                     if distance_to_desired < lowest_distance:
                         lowest_distance = distance_to_desired
                         best_i = i
                         best_j = j
         #print("best_i: ", best_i, "best_j: ", best_j)
         if best_i >= 0 and best_j >= 0:
-            return best_i, best_j
+            if sqrt(lowest_distance) < distance_threshold:
+                return best_i, best_j
+            else:
+                return None
     
     # else pick a location at random
     cdef int goal = random_state.randint(0, hits)

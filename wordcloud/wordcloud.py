@@ -47,9 +47,9 @@ class IntegralOccupancyMap(object):
             self.integral = np.zeros((height, width), dtype=np.uint32)
 
     # sample positions; if desired_x and desired_y > 0, use them as hint
-    def sample_position(self, size_x, size_y, random_state, desired_x, desired_y):
+    def sample_position(self, size_x, size_y, random_state, desired_x, desired_y, distance_threshold):
         return query_integral_image(self.integral, size_x, size_y,
-                                    random_state, desired_x, desired_y)
+                                    random_state, desired_x, desired_y, distance_threshold)
 
     def update(self, img_array, pos_x, pos_y):
         partial_integral = np.cumsum(np.cumsum(img_array[pos_x:, pos_y:],
@@ -389,7 +389,7 @@ class WordCloud(object):
         """
         return self.generate_from_frequencies(frequencies)
 
-    def generate_from_frequencies(self, frequencies, max_font_size=None, desired_positions=None, global_frequencies=None):  # noqa: C901
+    def generate_from_frequencies(self, frequencies, max_font_size=None, desired_positions=None, global_frequencies=None, distance_threshold=0.25):  # noqa: C901
         """Create a word_cloud from words and frequencies, with optional desired positions.
 
         Parameters
@@ -526,7 +526,7 @@ class WordCloud(object):
                 # find possible places using integral image:
                 result = occupancy.sample_position(box_size[3] + self.margin,
                                                    box_size[2] + self.margin,
-                                                   random_state, desired_x, desired_y)
+                                                   random_state, desired_x, desired_y, distance_threshold)
                 if result is not None:
                     # Found a place
                     break
