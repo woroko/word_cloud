@@ -996,7 +996,7 @@ class WordCloud(object):
                 '<text'
                 ' transform="{}"'
                 ' font-size="{}"'
-                ' style="fill:{}"'
+                ' style="fill:rgb{}"'
                 '>'
                 '{}'
                 '</text>'

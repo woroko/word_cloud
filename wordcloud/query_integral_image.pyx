@@ -34,7 +34,7 @@ def query_integral_image(unsigned int[:,:] integral_image, int size_x, int
                 area -= integral_image[i + size_x, j] + integral_image[i, j + size_y]
                 if not area:
                     #hits += 1
-                    distance_to_desired = (desired_x*x - (i+size_x/2)) ** 2 + (desired_y*y - (j+size_y/2)) ** 2
+                    distance_to_desired = (desired_x*x - i) ** 2 + (desired_y*y - j) ** 2
                     if distance_to_desired < lowest_distance:
                         lowest_distance = distance_to_desired
                         best_i = i
